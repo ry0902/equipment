@@ -165,12 +165,14 @@ public class UserController {
         }
     }
 
-    @ApiOperation("根据用户id获取用户接口")
-    @GetMapping("/getUserById")
-    public Response getUser(Integer userId){
+    @ApiOperation("登录后直接获取用户接口")
+    @GetMapping("/getUser")
+    public Response getUser(){
         try {
             Assert.assertNotNull(userId);
-            return Response.success(userService.getById(userId));
+            User user = userService.getById(this.userId);
+            user.setPassword("");
+            return Response.success(user);
         } catch (RuntimeException e){
             return Response.error(e.getMessage());
         }
