@@ -171,7 +171,6 @@ public class UserController {
         try {
             Assert.assertNotNull(userId);
             User user = userService.getById(this.userId);
-            user.setPassword("");
             return Response.success(user);
         } catch (RuntimeException e){
             return Response.error(e.getMessage());

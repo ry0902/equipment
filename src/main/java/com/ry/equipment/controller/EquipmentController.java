@@ -5,9 +5,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ry.equipment.model.entity.Equipment;
+import com.ry.equipment.model.entity.RentRecord;
+import com.ry.equipment.model.entity.StockLog;
 import com.ry.equipment.model.vo.Response;
 import com.ry.equipment.service.CategoryService;
 import com.ry.equipment.service.EquipmentService;
+import com.ry.equipment.service.StockLogService;
 import com.ry.equipment.utils.Assert;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -41,6 +45,9 @@ public class EquipmentController {
     @Autowired
     private CategoryService categoryService;
 
+    @Autowired
+    private StockLogService stockLogService;
+
     @ApiOperation("新增器材")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "id", value = "器材id(有就是更新，无就是新增)", required = true),
@@ -54,10 +61,22 @@ public class EquipmentController {
     public Response saveOrUpdateEquip(Equipment equipment){
         try {
             Assert.assertNotNull(equipment);
+            Equipment equipment_old = equipmentService.getById(equipment.getId());
             if(equipment.getIniCount() < equipment.getRentCount()){
                 return Response.error("借出数不能大于原库存数");
             }
-            equipmentService.saveOrUpdate(equipment);
+            if(equipment.getId() == null){
+                equipmentService.saveOrUpdate(equipment);
+                stockLogService.save(new StockLog(equipment.getId(), equipment.getIniCount(), equipment.getRent().multiply(new BigDecimal(equipment.getIniCount()))));
+            }
+            else {
+                equipmentService.saveOrUpdate(equipment);
+                QueryWrapper<Equipment> queryWrapper = new QueryWrapper<>();
+                queryWrapper.lambda().eq(Equipment::getEquipName, equipment.getEquipName());
+                Equipment equipment_db = equipmentService.getOne(queryWrapper);
+                Integer subCount = equipment.getIniCount() - equipment_old.getIniCount();
+                stockLogService.save(new StockLog(equipment_db.getId(), subCount, equipment.getRent().multiply(new BigDecimal(subCount))));
+            }
             return Response.success(equipment);
         } catch (Exception e){
             return Response.error(e.getMessage());
