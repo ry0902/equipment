@@ -169,7 +169,7 @@ public class UserController {
     @GetMapping("/getUser")
     public Response getUser(){
         try {
-            Assert.assertNotNull(userId);
+            Assert.assertNotNull(this.userId);
             User user = userService.getById(this.userId);
             return Response.success(user);
         } catch (RuntimeException e){
