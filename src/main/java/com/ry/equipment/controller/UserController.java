@@ -123,6 +123,7 @@ public class UserController {
                 return Response.error("用户不存在，请先注册！");
             }
             if(user_db.getPassword().equals(password)){
+                this.userId = user_db.getId();
                 return Response.success("登陆成功！");
             }
             else {
