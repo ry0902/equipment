@@ -18,6 +18,7 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 
 
 /**
@@ -48,6 +49,9 @@ public class UserController {
 
     @Autowired
     private LogService logService;
+
+    @Autowired
+    private CategoryService categoryService;
 
     private Integer userId;
 
@@ -251,6 +255,74 @@ public class UserController {
             }
             else {
                 return Response.error("没有对应租借记录");
+            }
+        } catch (RuntimeException e){
+            return Response.error(e.getMessage());
+        }
+    }
+
+    @ApiOperation("得到用户分页归还记录列表接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "currentPage", value = "当前页", required = true),
+            @ApiImplicitParam(name = "pageSize", value = "每页条数", required = true),
+    })
+    @GetMapping("/getUserReturnList")
+    public Response getUserReturnList(Integer currentPage, Integer pageSize){
+        try {
+            if(currentPage == null && pageSize == null){
+                List<ReturnRecord> list = returnRecordService.list();
+                list.forEach(e -> {
+                    e.setEquipment(equipmentService.getById(e.getEquipId()));
+                    e.getEquipment().setCategory(categoryService.getById(e.getEquipment().getCateId()));
+                });
+                return Response.success(list);
+            }
+            else {
+                QueryWrapper<ReturnRecord> queryWrapper = new QueryWrapper<>();
+                queryWrapper.lambda().eq(ReturnRecord::getUserId, this.userId);
+                IPage<ReturnRecord> page = new Page<>();
+                page.setCurrent(currentPage);
+                page.setSize(pageSize);
+                IPage<ReturnRecord> iPage = returnRecordService.page(page, queryWrapper);
+                iPage.getRecords().forEach(e -> {
+                    e.setEquipment(equipmentService.getById(e.getEquipId()));
+                    e.getEquipment().setCategory(categoryService.getById(e.getEquipment().getCateId()));
+                });
+                return Response.success(iPage);
+            }
+        } catch (RuntimeException e){
+            return Response.error(e.getMessage());
+        }
+    }
+
+    @ApiOperation("得到用户分页租借记录列表接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "currentPage", value = "当前页", required = true),
+            @ApiImplicitParam(name = "pageSize", value = "每页条数", required = true),
+    })
+    @GetMapping("/getUserRentList")
+    public Response getUserRentList(Integer currentPage, Integer pageSize){
+        try {
+            if(currentPage == null && pageSize == null){
+                List<RentRecord> list = rentRecordService.list();
+                list.forEach(e -> {
+                    e.setEquipment(equipmentService.getById(e.getEquipId()));
+                    e.getEquipment().setCategory(categoryService.getById(e.getEquipment().getCateId()));
+                });
+                return Response.success(list);
+            }
+            else {
+                QueryWrapper<RentRecord> queryWrapper = new QueryWrapper<>();
+                queryWrapper.lambda().eq(RentRecord::getUserId, this.userId);
+                IPage<RentRecord> page = new Page<>();
+                page.setCurrent(currentPage);
+                page.setSize(pageSize);
+                IPage<RentRecord> iPage = rentRecordService.page(page, queryWrapper);
+                iPage.getRecords().forEach(e -> {
+                    e.setEquipment(equipmentService.getById(e.getEquipId()));
+                    e.getEquipment().setCategory(categoryService.getById(e.getEquipment().getCateId()));
+                });
+                return Response.success(iPage);
             }
         } catch (RuntimeException e){
             return Response.error(e.getMessage());
